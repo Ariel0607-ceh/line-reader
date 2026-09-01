@@ -312,6 +312,10 @@
     color: var(--highlight-ink) !important;
     box-shadow: 0 0 0 5px var(--highlight-shadow), 0 0 22px var(--highlight-shadow);
   }
+  #readerOutput.solid-highlight .tok.active {
+    border-radius: 0;
+    box-shadow: none;
+  }
 
   .hint-bar {
     margin-top: 36px;
@@ -532,6 +536,13 @@
           <button type="button" data-align="justify" class="on">Justify</button>
         </div>
       </div>
+      <div class="tb-group">
+        <label>Highlight</label>
+        <div class="seg" id="highlightSeg" role="group" aria-label="Highlight style">
+          <button type="button" data-highlight="segmented" class="on">Per word</button>
+          <button type="button" data-highlight="solid">Solid line</button>
+        </div>
+      </div>
       <div class="spacer"></div>
       <span class="position-readout" id="positionReadout">Line 0 of 0</span>
       <button class="ghost" id="newTextBtn" type="button">New text</button>
@@ -632,6 +643,7 @@
     positionReadout: document.getElementById("positionReadout"),
     modeSeg: document.getElementById("modeSeg"),
     alignSeg: document.getElementById("alignSeg"),
+    highlightSeg: document.getElementById("highlightSeg"),
     hintBar: document.getElementById("hintBar"),
     touchNav: document.getElementById("touchNav"),
     touchUpBtn: document.getElementById("touchUpBtn"),
@@ -979,6 +991,15 @@
       b.classList.toggle("on", b === btn);
     });
     els.readerOutput.style.setProperty("--reader-align", state.align);
+  });
+
+  els.highlightSeg.addEventListener("click", function (e) {
+    var btn = e.target.closest("button[data-highlight]");
+    if (!btn) return;
+    Array.prototype.forEach.call(els.highlightSeg.querySelectorAll("button"), function (b) {
+      b.classList.toggle("on", b === btn);
+    });
+    els.readerOutput.classList.toggle("solid-highlight", btn.dataset.highlight === "solid");
   });
 
   els.newTextBtn.addEventListener("click", function () {
