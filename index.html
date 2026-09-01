@@ -318,8 +318,14 @@
     padding-top: 18px;
     border-top: 1px solid var(--border);
     font-size: 12.5px;
+    line-height: 1.9;
     color: var(--ink-faint);
     text-align: center;
+  }
+  .hint-bar .hc {
+    display: inline-block;
+    white-space: nowrap;
+    margin: 0 2px;
   }
   kbd {
     font-family: inherit;
@@ -339,8 +345,49 @@
   @media (max-width: 640px) {
     header { padding: 18px 18px 14px; }
     main { padding: 10px 14px 44px; }
-    .toolbar { gap: 12px 16px; }
+    .toolbar { gap: 12px 16px; padding: 12px 14px; }
+    .tb-group { gap: 7px; }
+    .seg button { padding: 6px 10px; font-size: 12px; }
+    .hint-bar { font-size: 12px; padding: 0 4px; margin-top: 28px; padding-top: 16px; }
+    .touch-nav { right: 14px; bottom: 18px; gap: 10px; }
+    .touch-nav button { width: 50px; height: 50px; }
+    .touch-nav button.small { width: 38px; height: 38px; }
   }
+
+  .touch-nav {
+    display: none;
+    position: fixed;
+    right: 20px;
+    bottom: 26px;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 50;
+  }
+  .touch-nav.visible { display: flex; }
+  .touch-nav button {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    background: var(--accent-fill);
+    color: var(--accent-ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.28), 0 0 0 6px var(--glow);
+    transition: transform 100ms ease, box-shadow 140ms ease;
+  }
+  .touch-nav button:active { transform: scale(0.92); }
+  .touch-nav button svg { width: 22px; height: 22px; display: block; flex: none; }
+  .touch-nav button.small {
+    width: 40px;
+    height: 40px;
+    background: var(--bg-panel);
+    color: var(--ink-soft);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+  }
+  .touch-nav button.small svg { width: 17px; height: 17px; }
 
   footer {
     padding: 34px 20px 40px;
@@ -475,6 +522,7 @@
         <div class="seg" id="modeSeg" role="group" aria-label="Navigation mode">
           <button type="button" data-mode="keyboard" class="on">Keyboard</button>
           <button type="button" data-mode="hover">Mouse hover</button>
+          <button type="button" data-mode="touch">Touch (Mobile)</button>
         </div>
       </div>
       <div class="tb-group">
@@ -497,6 +545,21 @@
       Use <kbd>↑</kbd> <kbd>↓</kbd> to move &nbsp;·&nbsp; <kbd>Space</kbd> to advance &nbsp;·&nbsp; <kbd>Home</kbd> back to start
     </div>
   </section>
+
+  <div class="touch-nav" id="touchNav">
+    <button type="button" id="touchHomeBtn" class="small" aria-label="Jump to start">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 17l-6-6-6 6"/><path d="M6 7h12"/></svg>
+    </button>
+    <button type="button" id="touchUpBtn" aria-label="Previous line">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+    </button>
+    <button type="button" id="touchDownBtn" aria-label="Next line">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+    </button>
+    <button type="button" id="touchEndBtn" class="small" aria-label="Jump to end">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7l6 6 6-6"/><path d="M6 17h12"/></svg>
+    </button>
+  </div>
 </main>
 
 <footer>
@@ -569,16 +632,27 @@
     positionReadout: document.getElementById("positionReadout"),
     modeSeg: document.getElementById("modeSeg"),
     alignSeg: document.getElementById("alignSeg"),
-    hintBar: document.getElementById("hintBar")
+    hintBar: document.getElementById("hintBar"),
+    touchNav: document.getElementById("touchNav"),
+    touchUpBtn: document.getElementById("touchUpBtn"),
+    touchDownBtn: document.getElementById("touchDownBtn"),
+    touchHomeBtn: document.getElementById("touchHomeBtn"),
+    touchEndBtn: document.getElementById("touchEndBtn")
   };
 
   var HINTS = {
-    keyboard: 'Use <kbd>\u2191</kbd> <kbd>\u2193</kbd> to move &nbsp;\u00b7&nbsp; <kbd>Space</kbd> to advance &nbsp;\u00b7&nbsp; <kbd>Home</kbd> back to start',
-    hover: 'Move your mouse over a line to highlight it as you read'
+    keyboard: '<span class="hc">Use <kbd>\u2191</kbd> <kbd>\u2193</kbd> to move</span> <span class="hc">\u00b7 <kbd>Space</kbd> to advance</span> <span class="hc">\u00b7 <kbd>Home</kbd>/<kbd>End</kbd> to jump to start or end</span>',
+    hover: '<span class="hc">Move your mouse over a line to highlight it as you read</span>',
+    touch: '<span class="hc">Tap \u2191 \u2193 to move a line</span> <span class="hc">\u00b7 the top/bottom buttons jump to start or end</span> <span class="hc">\u00b7 or swipe up and down over the text</span>'
   };
 
   function updateHintBar() {
     els.hintBar.innerHTML = HINTS[state.navMode] || HINTS.keyboard;
+  }
+
+  function updateTouchNavVisibility() {
+    var show = state.navMode === "touch" && els.reading.style.display === "block";
+    els.touchNav.classList.toggle("visible", show);
   }
 
   var state = {
@@ -598,6 +672,14 @@
     els.themeIconMoon.style.display = t === "light" ? "none" : "block";
   }
   applyTheme("dark");
+
+  var isTouchDevice = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  if (isTouchDevice) {
+    state.navMode = "touch";
+    Array.prototype.forEach.call(els.modeSeg.querySelectorAll("button"), function (b) {
+      b.classList.toggle("on", b.dataset.mode === "touch");
+    });
+  }
   updateHintBar();
   els.themeToggle.addEventListener("click", function () {
     applyTheme(state.theme === "light" ? "dark" : "light");
@@ -737,7 +819,8 @@
 
     requestAnimationFrame(function () {
       rebuildLines();
-      if (state.lines.length && state.navMode === "keyboard") setActiveLine(0, true);
+      if (state.lines.length && (state.navMode === "keyboard" || state.navMode === "touch")) setActiveLine(0, true);
+      updateTouchNavVisibility();
       els.readerOutput.focus();
     });
   }
@@ -810,6 +893,33 @@
     els.positionReadout.textContent = "Line " + current + " of " + total;
   }
 
+  els.touchUpBtn.addEventListener("click", function () {
+    setActiveLine(state.currentIndex - 1);
+  });
+  els.touchDownBtn.addEventListener("click", function () {
+    setActiveLine(state.currentIndex + 1);
+  });
+  els.touchHomeBtn.addEventListener("click", function () {
+    setActiveLine(0);
+  });
+  els.touchEndBtn.addEventListener("click", function () {
+    setActiveLine(state.lines.length - 1);
+  });
+
+  var touchStartY = null;
+  els.readerOutput.addEventListener("touchstart", function (e) {
+    if (state.navMode !== "touch" || !e.touches.length) return;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  els.readerOutput.addEventListener("touchend", function (e) {
+    if (state.navMode !== "touch" || touchStartY === null || !e.changedTouches.length) return;
+    var deltaY = e.changedTouches[0].clientY - touchStartY;
+    touchStartY = null;
+    if (Math.abs(deltaY) < 32) return;
+    if (deltaY < 0) setActiveLine(state.currentIndex + 1);
+    else setActiveLine(state.currentIndex - 1);
+  }, { passive: true });
+
   els.readerOutput.addEventListener("mousemove", function (e) {
     if (state.navMode !== "hover") return;
     var target = e.target;
@@ -867,10 +977,11 @@
     Array.prototype.forEach.call(els.modeSeg.querySelectorAll("button"), function (b) {
       b.classList.toggle("on", b === btn);
     });
-    if (state.navMode === "keyboard" && state.currentIndex === -1 && state.lines.length) {
+    if ((state.navMode === "keyboard" || state.navMode === "touch") && state.currentIndex === -1 && state.lines.length) {
       setActiveLine(0, true);
     }
     updateHintBar();
+    updateTouchNavVisibility();
     els.readerOutput.focus();
   });
 
@@ -893,6 +1004,7 @@
     refreshStartState();
     state.currentIndex = -1;
     state.lines = [];
+    updateTouchNavVisibility();
   });
 
   window.addEventListener("resize", scheduleRebuild);
