@@ -643,7 +643,7 @@
   var HINTS = {
     keyboard: '<span class="hc">Use <kbd>\u2191</kbd> <kbd>\u2193</kbd> to move</span> <span class="hc">\u00b7 <kbd>Space</kbd> to advance</span> <span class="hc">\u00b7 <kbd>Home</kbd>/<kbd>End</kbd> to jump to start or end</span>',
     hover: '<span class="hc">Move your mouse over a line to highlight it as you read</span>',
-    touch: '<span class="hc">Tap \u2191 \u2193 to move a line</span> <span class="hc">\u00b7 the top/bottom buttons jump to start or end</span> <span class="hc">\u00b7 or swipe up and down over the text</span>'
+    touch: '<span class="hc">Tap \u2191 \u2193 to move a line</span> <span class="hc">\u00b7 the top/bottom buttons jump to start or end</span>'
   };
 
   function updateHintBar() {
@@ -905,20 +905,6 @@
   els.touchEndBtn.addEventListener("click", function () {
     setActiveLine(state.lines.length - 1);
   });
-
-  var touchStartY = null;
-  els.readerOutput.addEventListener("touchstart", function (e) {
-    if (state.navMode !== "touch" || !e.touches.length) return;
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  els.readerOutput.addEventListener("touchend", function (e) {
-    if (state.navMode !== "touch" || touchStartY === null || !e.changedTouches.length) return;
-    var deltaY = e.changedTouches[0].clientY - touchStartY;
-    touchStartY = null;
-    if (Math.abs(deltaY) < 32) return;
-    if (deltaY < 0) setActiveLine(state.currentIndex + 1);
-    else setActiveLine(state.currentIndex - 1);
-  }, { passive: true });
 
   els.readerOutput.addEventListener("mousemove", function (e) {
     if (state.navMode !== "hover") return;
